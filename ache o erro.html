@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ache o Erro - Caca ao Bug</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f23;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a3e, #2d1b4e);
+      padding: 2rem;
+      text-align: center;
+      border-bottom: 3px solid #ff6b6b;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: #ff6b6b;
+      margin-bottom: 0.3rem;
+    }
+
+    header p {
+      color: #aaa;
+      font-size: 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .exercicio {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .exercicio.resolvido {
+      border-color: #00c853;
+    }
+
+    .exercicio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: #16213e;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .exercicio-header:hover {
+      background: #1a2744;
+    }
+
+    .exercicio-header h2 {
+      font-size: 1.1rem;
+      color: #fff;
+    }
+
+    .exercicio-header .status-icon {
+      margin-right: 0.5rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .badge.facil { background: #00c853; color: #000; }
+    .badge.medio { background: #ffab00; color: #000; }
+    .badge.dificil { background: #ff5252; color: #fff; }
+
+    .exercicio-body {
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .exercicio.aberto .exercicio-body {
+      display: block;
+    }
+
+    .enunciado {
+      background: #0d1117;
+      border-left: 4px solid #58a6ff;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .codigo-bugado {
+      background: #0d1117;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+      color: #c9d1d9;
+      margin-bottom: 1rem;
+    }
+
+    .label-editor {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #ccc;
+    }
+
+    .saida-esperada {
+      background: #0d1117;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-bottom: 1rem;
+      white-space: pre;
+    }
+
+    .editor {
+      width: 100%;
+      min-height: 140px;
+      background: #0d1117;
+      border: 2px solid #444;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 0.8rem;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      resize: vertical;
+      tab-size: 4;
+    }
+
+    .editor:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    .editor.correto {
+      border-color: #00c853;
+      background: #0a1a0a;
+    }
+
+    .editor.errado {
+      border-color: #ff5252;
+    }
+
+    .botoes {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .btn:hover { transform: scale(1.03); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-validar {
+      background: #58a6ff;
+      color: #000;
+    }
+
+    .btn-dica {
+      background: #ffab00;
+      color: #000;
+    }
+
+    .btn-resposta {
+      background: #555;
+      color: #ddd;
+      display: none;
+    }
+
+    .btn-resetar {
+      background: #333;
+      color: #aaa;
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .feedback {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.3s;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feedback.sucesso {
+      background: #0a2e0a;
+      border-left: 4px solid #00c853;
+      color: #a5d6a7;
+    }
+
+    .feedback.erro {
+      background: #2e0a0a;
+      border-left: 4px solid #ff5252;
+      color: #ef9a9a;
+    }
+
+    .dica {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.3s;
+      background: #2d2200;
+      border-left: 4px solid #ffab00;
+      color: #ffdb70;
+    }
+
+    .resposta {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.3s;
+      background: #0a2e0a;
+      border-left: 4px solid #00c853;
+      color: #a5d6a7;
+    }
+
+    .resposta .codigo-corrigido {
+      background: #0d1117;
+      border: 1px solid #00c853;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre;
+      color: #c9d1d9;
+      margin-top: 0.5rem;
+    }
+
+    .tentativas {
+      font-size: 0.8rem;
+      color: #888;
+      margin-left: auto;
+    }
+
+    .placar {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .placar h3 {
+      color: #58a6ff;
+      margin-bottom: 0.5rem;
+    }
+
+    .placar .contagem {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #00c853;
+    }
+
+    .tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: #253040;
+      color: #8b9dc3;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #555;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Ache o Erro</h1>
+  <p>Encontre o bug, corrija o codigo e valide. Em duplas!</p>
+</header>
+
+<div class="container">
+
+  <div class="placar">
+    <h3>Bugs corrigidos</h3>
+    <div class="contagem"><span id="resolvidos">18</span> / <span id="total">18</span></div>
+  </div>
+
+  <div id="exercicios"></div>
+
+</div>
+
+<footer>
+  Atividade de fechamento &mdash; Logica de Programacao
+</footer>
+
+<script>
+const exercicios = [
+  {
+    numero: 1,
+    titulo: "Comparacao ou atribuicao?",
+    dificuldade: "facil",
+    tags: ["variaveis", "condicionais"],
+    enunciado: "O programa deveria mostrar \"Maior de idade\" somente quando a idade for 18 ou mais. Mas ele sempre mostra, mesmo com idade 10. Corrija o codigo para que com idade 10 nao apareca nada no console.",
+    codigo:
+`var idade = 10;
+
+if (idade = 18) {
+    console.log("Maior de idade");
+}`,
+    saidaEsperada: "",
+    dica: "Qual a diferenca entre <code>=</code> e <code>==</code> em JavaScript?",
+    explicacao: "O operador <code>=</code> atribui o valor 18 a <code>idade</code>, que e truthy. Deveria ser <code>==</code> ou <code>===</code> para comparar.",
+    correcao:
+`var idade = 10;
+
+if (idade === 18) {
+    console.log("Maior de idade");
+}`
+  },
+  {
+    numero: 2,
+    titulo: "Variavel fantasma",
+    dificuldade: "facil",
+    tags: ["variaveis"],
+    enunciado: "O programa deveria mostrar o nome e a idade, mas da erro ao rodar. Corrija para que a saida seja:<br><code>Nome: Carlos</code><br><code>Idade: 25</code>",
+    codigo:
+`var nome = "Carlos";
+var idade = 25;
+
+console.log("Nome: " + nome);
+console.log("Idade: " + ldade);`,
+    saidaEsperada: "Nome: Carlos\nIdade: 25",
+    dica: "Olhe com cuidado o nome da variavel na ultima linha. Letra por letra.",
+    explicacao: "Na ultima linha esta escrito <code>ldade</code> (com L minusculo) em vez de <code>idade</code> (com I minusculo). Parece igual, mas sao caracteres diferentes.",
+    correcao:
+`var nome = "Carlos";
+var idade = 25;
+
+console.log("Nome: " + nome);
+console.log("Idade: " + idade);`
+  },
+  {
+    numero: 3,
+    titulo: "Condicao invertida",
+    dificuldade: "facil",
+    tags: ["condicionais"],
+    enunciado: "O programa deveria dar desconto para quem tem 60 anos ou mais, mas esta dando desconto para quem tem MENOS de 60. Corrija para que com idade 25 apareca: <code>Sem desconto.</code>",
+    codigo:
+`var idade = 25;
+
+if (idade < 60) {
+    console.log("Voce tem desconto!");
+} else {
+    console.log("Sem desconto.");
+}`,
+    saidaEsperada: "Sem desconto.",
+    dica: "O sinal de comparacao esta apontando para o lado certo?",
+    explicacao: "A condicao usa <code>&lt;</code> (menor que) quando deveria usar <code>&gt;=</code> (maior ou igual). Esta invertida.",
+    correcao:
+`var idade = 25;
+
+if (idade >= 60) {
+    console.log("Voce tem desconto!");
+} else {
+    console.log("Sem desconto.");
+}`
+  },
+  {
+    numero: 4,
+    titulo: "Soma que nao soma",
+    dificuldade: "facil",
+    tags: ["variaveis", "tipos"],
+    enunciado: "As variaveis <code>a</code> e <code>b</code> recebem texto (como se viessem do prompt). O resultado de \"5\" + \"3\" aparece como \"53\" em vez de 8. Corrija para que a saida seja: <code>Resultado: 8</code>",
+    codigo:
+`var a = "5";
+var b = "3";
+
+var soma = a + b;
+console.log("Resultado: " + soma);`,
+    saidaEsperada: "Resultado: 8",
+    dica: "As variaveis sao texto (string), nao numero. O que o <code>+</code> faz com strings? Como converter para numero?",
+    explicacao: "As variaveis sao strings. O <code>+</code> entre strings concatena em vez de somar. Precisa converter para numero com <code>Number()</code> ou <code>parseInt()</code>.",
+    correcao:
+`var a = Number("5");
+var b = Number("3");
+
+var soma = a + b;
+console.log("Resultado: " + soma);`
+  },
+  {
+    numero: 5,
+    titulo: "Ponto-e-virgula assassino",
+    dificuldade: "facil",
+    tags: ["lacos"],
+    enunciado: "O programa deveria mostrar os numeros de 1 a 5 (cada um em uma linha). Mas so aparece o 6. Corrija!",
+    codigo:
+`for (var i = 1; i <= 5; i++); {
+    console.log(i);
+}`,
+    saidaEsperada: "1\n2\n3\n4\n5",
+    dica: "Olhe o que vem logo depois do parentese do <code>for</code>.",
+    explicacao: "O <code>;</code> logo depois do <code>for(...)</code> faz o laco rodar vazio 5 vezes. O bloco <code>{}</code> executa so uma vez, quando <code>i</code> ja vale 6.",
+    correcao:
+`for (var i = 1; i <= 5; i++) {
+    console.log(i);
+}`
+  },
+  {
+    numero: 6,
+    titulo: "Else if esquecido",
+    dificuldade: "facil",
+    tags: ["condicionais"],
+    enunciado: "O programa classifica notas: A (>=90), B (>=70), C (>=50), D (resto). Mas nota 95 mostra A, B e C ao mesmo tempo. Corrija para mostrar somente: <code>A</code>",
+    codigo:
+`var nota = 95;
+
+if (nota >= 90) {
+    console.log("A");
+}
+if (nota >= 70) {
+    console.log("B");
+}
+if (nota >= 50) {
+    console.log("C");
+}
+if (nota < 50) {
+    console.log("D");
+}`,
+    saidaEsperada: "A",
+    dica: "95 e maior ou igual a 90, a 70 e a 50. Cada <code>if</code> esta sendo checado de forma independente.",
+    explicacao: "Todos os <code>if</code> sao independentes. 95 satisfaz as tres primeiras condicoes. Deveria usar <code>else if</code> para que so uma seja executada.",
+    correcao:
+`var nota = 95;
+
+if (nota >= 90) {
+    console.log("A");
+} else if (nota >= 70) {
+    console.log("B");
+} else if (nota >= 50) {
+    console.log("C");
+} else {
+    console.log("D");
+}`
+  },
+  {
+    numero: 7,
+    titulo: "Acumulador resetado",
+    dificuldade: "medio",
+    tags: ["lacos", "variaveis"],
+    enunciado: "O programa deveria somar os numeros de 1 a 5 e mostrar <code>Soma: 15</code>, mas mostra o valor errado. Corrija!",
+    codigo:
+`for (var i = 1; i <= 5; i++) {
+    var soma = 0;
+    soma = soma + i;
+}
+console.log("Soma: " + soma);`,
+    saidaEsperada: "Soma: 15",
+    dica: "Onde a variavel <code>soma</code> esta sendo criada/zerada? Dentro ou fora do laco?",
+    explicacao: "<code>var soma = 0</code> esta dentro do laco, entao zera a cada rodada. Precisa declarar ANTES do laco.",
+    correcao:
+`var soma = 0;
+for (var i = 1; i <= 5; i++) {
+    soma = soma + i;
+}
+console.log("Soma: " + soma);`
+  },
+  {
+    numero: 8,
+    titulo: "Laco infinito",
+    dificuldade: "medio",
+    tags: ["lacos"],
+    enunciado: "O programa deveria contar de 10 ate 1 (cada numero em uma linha), mas trava o navegador. Corrija para que conte regressivamente de 10 a 1.",
+    codigo:
+`var i = 10;
+
+while (i >= 1) {
+    console.log(i);
+    i++;
+}`,
+    saidaEsperada: "10\n9\n8\n7\n6\n5\n4\n3\n2\n1",
+    dica: "Se <code>i</code> comeca em 10 e vai aumentando, quando que <code>i >= 1</code> vai ser falso?",
+    explicacao: "<code>i++</code> incrementa, mas deveria decrementar (<code>i--</code>). O valor so cresce, a condicao nunca fica falsa, laco infinito.",
+    correcao:
+`var i = 10;
+
+while (i >= 1) {
+    console.log(i);
+    i--;
+}`
+  },
+  {
+    numero: 9,
+    titulo: "Indice fora do vetor",
+    dificuldade: "medio",
+    tags: ["vetores", "lacos"],
+    enunciado: "O programa deveria mostrar todos os nomes do vetor (Ana, Bruno, Carla), mas aparece um <code>undefined</code> extra no final. Corrija!",
+    codigo:
+`var nomes = ["Ana", "Bruno", "Carla"];
+
+for (var i = 0; i <= nomes.length; i++) {
+    console.log(nomes[i]);
+}`,
+    saidaEsperada: "Ana\nBruno\nCarla",
+    dica: "Se o vetor tem 3 elementos, <code>nomes.length</code> vale 3. Qual e o ultimo indice valido?",
+    explicacao: "Indices vao de 0 a 2 (length - 1). Com <code>&lt;=</code> o laco acessa <code>nomes[3]</code> que nao existe. Trocar por <code>&lt;</code>.",
+    correcao:
+`var nomes = ["Ana", "Bruno", "Carla"];
+
+for (var i = 0; i < nomes.length; i++) {
+    console.log(nomes[i]);
+}`
+  },
+  {
+    numero: 10,
+    titulo: "Funcao sem retorno",
+    dificuldade: "medio",
+    tags: ["funcoes"],
+    enunciado: "A funcao deveria retornar o dobro de 5, mas <code>resultado</code> e <code>undefined</code>. Corrija para que a saida seja: <code>Dobro: 10</code>",
+    codigo:
+`function dobro(n) {
+    var d = n * 2;
+    console.log(d);
+}
+
+var resultado = dobro(5);
+console.log("Dobro: " + resultado);`,
+    saidaEsperada: "Dobro: 10",
+    dica: "A funcao mostra o valor no console, mas sera que ela DEVOLVE o valor para quem chamou?",
+    explicacao: "A funcao faz <code>console.log</code> mas nao tem <code>return</code>. Sem return, a funcao devolve <code>undefined</code>.",
+    correcao:
+`function dobro(n) {
+    var d = n * 2;
+    return d;
+}
+
+var resultado = dobro(5);
+console.log("Dobro: " + resultado);`
+  },
+  {
+    numero: 11,
+    titulo: "Return precoce",
+    dificuldade: "medio",
+    tags: ["funcoes", "lacos"],
+    enunciado: "A funcao deveria somar todos os elementos do vetor [10, 20, 30] e mostrar <code>60</code>, mas mostra so 10.",
+    codigo:
+`function somaVetor(vetor) {
+    var soma = 0;
+    for (var i = 0; i < vetor.length; i++) {
+        soma = soma + vetor[i];
+        return soma;
+    }
+}
+
+console.log(somaVetor([10, 20, 30]));`,
+    saidaEsperada: "60",
+    dica: "Onde o <code>return</code> esta posicionado? Dentro ou fora do laco?",
+    explicacao: "O <code>return</code> esta dentro do <code>for</code>, entao na primeira iteracao ja sai da funcao. Deveria estar DEPOIS do laco.",
+    correcao:
+`function somaVetor(vetor) {
+    var soma = 0;
+    for (var i = 0; i < vetor.length; i++) {
+        soma = soma + vetor[i];
+    }
+    return soma;
+}
+
+console.log(somaVetor([10, 20, 30]));`
+  },
+  {
+    numero: 12,
+    titulo: "Chaves perdidas",
+    dificuldade: "medio",
+    tags: ["condicionais", "lacos"],
+    enunciado: "O programa deveria mostrar so os numeros pares de 1 a 10, cada um seguido de \"(par)\". Mas o \"(par)\" aparece sozinho uma vez no final. Corrija para a saida correta.",
+    codigo:
+`for (var i = 1; i <= 10; i++)
+    if (i % 2 === 0)
+        console.log(i);
+        console.log("(par)");`,
+    saidaEsperada: "2\n(par)\n4\n(par)\n6\n(par)\n8\n(par)\n10\n(par)",
+    dica: "Sem chaves <code>{}</code>, o <code>if</code> e o <code>for</code> controlam apenas a PROXIMA linha.",
+    explicacao: "Sem <code>{}</code>, o <code>for</code> controla so o <code>if</code>, e o <code>if</code> controla so o primeiro <code>console.log</code>. O segundo <code>console.log</code> roda fora do laco. Precisa de chaves.",
+    correcao:
+`for (var i = 1; i <= 10; i++) {
+    if (i % 2 === 0) {
+        console.log(i);
+        console.log("(par)");
+    }
+}`
+  },
+  {
+    numero: 13,
+    titulo: "Escopo traicoeiro",
+    dificuldade: "dificil",
+    tags: ["variaveis", "funcoes"],
+    enunciado: "O programa deveria mostrar <code>10</code> depois de chamar a funcao, mas mostra <code>0</code>. O valor nao muda! Corrija.",
+    codigo:
+`var pontos = 0;
+
+function ganharPontos(p) {
+    p = p + 10;
+}
+
+ganharPontos(pontos);
+console.log(pontos);`,
+    saidaEsperada: "10",
+    dica: "Quando voce passa uma variavel primitiva (numero) para uma funcao, ela recebe uma COPIA do valor.",
+    explicacao: "Tipos primitivos sao passados por valor. <code>p</code> dentro da funcao e uma copia. Alterar <code>p</code> nao muda <code>pontos</code>. A funcao deveria retornar o novo valor.",
+    correcao:
+`var pontos = 0;
+
+function ganharPontos(p) {
+    return p + 10;
+}
+
+pontos = ganharPontos(pontos);
+console.log(pontos);`
+  },
+  {
+    numero: 14,
+    titulo: "Off-by-one duplo",
+    dificuldade: "dificil",
+    tags: ["vetores", "lacos"],
+    enunciado: "A funcao deveria inverter o vetor [1,2,3,4] para [4,3,2,1]. Corrija para que a saida seja: <code>4,3,2,1</code>",
+    codigo:
+`function inverter(vetor) {
+    var resultado = [];
+    for (var i = vetor.length; i > 0; i--) {
+        resultado.push(vetor[i]);
+    }
+    return resultado;
+}
+
+console.log(inverter([1, 2, 3, 4]));`,
+    saidaEsperada: "4,3,2,1",
+    dica: "Se o vetor tem 4 elementos, <code>vetor[4]</code> existe? E <code>vetor[0]</code> esta sendo incluido?",
+    explicacao: "Dois erros: <code>i</code> comeca em <code>length</code> (4) que nao existe, e para antes de 0, pulando o indice 0. Deveria comecar em <code>length - 1</code> e ir ate <code>>= 0</code>.",
+    correcao:
+`function inverter(vetor) {
+    var resultado = [];
+    for (var i = vetor.length - 1; i >= 0; i--) {
+        resultado.push(vetor[i]);
+    }
+    return resultado;
+}
+
+console.log(inverter([1, 2, 3, 4]));`
+  },
+  {
+    numero: 15,
+    titulo: "Contador de vogais quebrado",
+    dificuldade: "dificil",
+    tags: ["lacos", "condicionais", "strings"],
+    enunciado: "A funcao deveria contar as vogais em \"abacate\" (4 vogais: a, a, a, e) e mostrar <code>4</code>. Mas retorna so 3. Corrija!",
+    codigo:
+`function contarVogais(texto) {
+    var vogais = "aeiou";
+    var contador = 0;
+
+    for (var i = 0; i < texto.length; i++) {
+        if (vogais.indexOf(texto[i]) == 0) {
+            contador++;
+        }
+    }
+    return contador;
+}
+
+console.log(contarVogais("abacate"));`,
+    saidaEsperada: "4",
+    dica: "<code>indexOf</code> retorna -1 quando NAO encontra. Quando encontra, retorna a posicao (0, 1, 2...). Qual comparacao faz sentido?",
+    explicacao: "<code>indexOf</code> retorna a posicao na string \"aeiou\". Com <code>== 0</code>, so conta letras na posicao 0, ou seja, so o \"a\". Deveria ser <code>!== -1</code> para pegar qualquer vogal.",
+    correcao:
+`function contarVogais(texto) {
+    var vogais = "aeiou";
+    var contador = 0;
+
+    for (var i = 0; i < texto.length; i++) {
+        if (vogais.indexOf(texto[i]) !== -1) {
+            contador++;
+        }
+    }
+    return contador;
+}
+
+console.log(contarVogais("abacate"));`
+  },
+  {
+    numero: 16,
+    titulo: "Busca que acha cedo demais",
+    dificuldade: "dificil",
+    tags: ["funcoes", "lacos", "condicionais"],
+    enunciado: "A funcao deveria verificar se TODOS os numeros sao positivos. Com [2, -1, 3] deveria mostrar <code>false</code>, mas mostra <code>true</code>.",
+    codigo:
+`function todosPositivos(vetor) {
+    for (var i = 0; i < vetor.length; i++) {
+        if (vetor[i] > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+console.log(todosPositivos([2, -1, 3]));`,
+    saidaEsperada: "false",
+    dica: "A funcao retorna na primeira iteracao, nao importa se e true ou false. Ela checa so o primeiro elemento.",
+    explicacao: "Retorna imediatamente no primeiro elemento (2 > 0, return true). Nunca checa -1. Para checar TODOS, so retorne <code>false</code> ao achar um negativo. O <code>return true</code> so vem DEPOIS do laco inteiro.",
+    correcao:
+`function todosPositivos(vetor) {
+    for (var i = 0; i < vetor.length; i++) {
+        if (vetor[i] <= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+console.log(todosPositivos([2, -1, 3]));`
+  },
+  {
+    numero: 17,
+    titulo: "Matriz mal percorrida",
+    dificuldade: "dificil",
+    tags: ["vetores", "lacos"],
+    enunciado: "O programa deveria somar todos os 6 elementos da matriz 2x3 e mostrar <code>Soma: 21</code>, mas mostra <code>Soma: 12</code>.",
+    codigo:
+`var matriz = [
+    [1, 2, 3],
+    [4, 5, 6]
+];
+var soma = 0;
+
+for (var i = 0; i < matriz.length; i++) {
+    for (var j = 0; j < matriz.length; j++) {
+        soma = soma + matriz[i][j];
+    }
+}
+console.log("Soma: " + soma);`,
+    saidaEsperada: "Soma: 21",
+    dica: "O laco interno usa <code>matriz.length</code> (numero de linhas). Mas ele deveria percorrer as COLUNAS de cada linha.",
+    explicacao: "O laco interno usa <code>matriz.length</code> (2) em vez de <code>matriz[i].length</code> (3). So percorre 2 colunas de cada linha, ignorando a terceira.",
+    correcao:
+`var matriz = [
+    [1, 2, 3],
+    [4, 5, 6]
+];
+var soma = 0;
+
+for (var i = 0; i < matriz.length; i++) {
+    for (var j = 0; j < matriz[i].length; j++) {
+        soma = soma + matriz[i][j];
+    }
+}
+console.log("Soma: " + soma);`
+  },
+  {
+    numero: 18,
+    titulo: "Closure com var",
+    dificuldade: "dificil",
+    tags: ["funcoes", "lacos", "closures"],
+    enunciado: "O programa cria 3 funcoes que deveriam mostrar 0, 1 e 2 (cada um em uma linha). Mas todas mostram 3. Corrija!",
+    codigo:
+`var funcoes = [];
+
+for (var i = 0; i < 3; i++) {
+    funcoes.push(function() {
+        console.log(i);
+    });
+}
+
+funcoes[0]();
+funcoes[1]();
+funcoes[2]();`,
+    saidaEsperada: "0\n1\n2",
+    dica: "<code>var</code> nao tem escopo de bloco. Quando as funcoes executam, o laco ja terminou. Qual e o valor de <code>i</code> nesse momento?",
+    explicacao: "Com <code>var</code>, <code>i</code> e compartilhado. Quando as funcoes executam, o laco ja acabou e <code>i</code> vale 3. Trocar <code>var</code> por <code>let</code> cria escopo de bloco, cada iteracao tem seu proprio <code>i</code>.",
+    correcao:
+`var funcoes = [];
+
+for (let i = 0; i < 3; i++) {
+    funcoes.push(function() {
+        console.log(i);
+    });
+}
+
+funcoes[0]();
+funcoes[1]();
+funcoes[2]();`
+  }
+];
+
+// === RENDER ===
+const container = document.getElementById('exercicios');
+const totalEl = document.getElementById('total');
+const resolvidosEl = document.getElementById('resolvidos');
+totalEl.textContent = exercicios.length;
+let resolvidos = 0;
+const tentativasPorEx = {};
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+exercicios.forEach(ex => {
+  tentativasPorEx[ex.numero] = 0;
+
+  const div = document.createElement('div');
+  div.className = 'exercicio';
+  div.dataset.numero = ex.numero;
+
+  const saidaLabel = ex.saidaEsperada === ""
+    ? "<b>Saida esperada:</b> <em>(nenhuma saida no console)</em>"
+    : "<b>Saida esperada:</b>";
+  const saidaBloco = ex.saidaEsperada === ""
+    ? ""
+    : `<div class="saida-esperada">${escapeHtml(ex.saidaEsperada)}</div>`;
+
+  div.innerHTML = `
+    <div class="exercicio-header" onclick="toggleExercicio(this)">
+      <h2><span class="status-icon">&#9744;</span> #${ex.numero} - ${ex.titulo}</h2>
+      <span class="badge ${ex.dificuldade}">${ex.dificuldade}</span>
+    </div>
+    <div class="exercicio-body">
+      <div class="tags">${ex.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      <div class="enunciado">${ex.enunciado}</div>
+
+      <label class="label-editor">Codigo com bug (original):</label>
+      <div class="codigo-bugado">${escapeHtml(ex.codigo)}</div>
+
+      ${saidaLabel}
+      ${saidaBloco}
+
+      <label class="label-editor">Escreva o codigo corrigido:</label>
+      <textarea class="editor" data-numero="${ex.numero}" spellcheck="false">${escapeHtml(ex.codigo)}</textarea>
+
+      <div class="botoes">
+        <button class="btn btn-validar" onclick="validar(${ex.numero})">Validar</button>
+        <button class="btn btn-dica" onclick="toggleDica(this)">Dica</button>
+        <button class="btn btn-resetar" onclick="resetar(${ex.numero})">Resetar</button>
+        <button class="btn btn-resposta" data-numero="${ex.numero}" onclick="toggleResposta(this)">Ver Resposta</button>
+        <span class="tentativas" data-numero="${ex.numero}"></span>
+      </div>
+
+      <div class="feedback" data-numero="${ex.numero}"></div>
+      <div class="dica">${ex.dica}</div>
+      <div class="resposta" data-resp-numero="${ex.numero}">
+        <strong>Explicacao:</strong> ${ex.explicacao}
+        <br><br><strong>Codigo corrigido:</strong>
+        <div class="codigo-corrigido">${escapeHtml(ex.correcao)}</div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+});
+
+// Tab support in textareas
+document.querySelectorAll('.editor').forEach(textarea => {
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      var start = this.selectionStart;
+      var end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 4;
+    }
+  });
+});
+
+function toggleExercicio(header) {
+  header.parentElement.classList.toggle('aberto');
+}
+
+function toggleDica(btn) {
+  const dica = btn.closest('.exercicio-body').querySelector('.dica');
+  dica.style.display = dica.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleResposta(btn) {
+  const numero = btn.dataset.numero;
+  const resp = document.querySelector(`[data-resp-numero="${numero}"]`);
+  resp.style.display = resp.style.display === 'block' ? 'none' : 'block';
+}
+
+function resetar(numero) {
+  const ex = exercicios.find(e => e.numero === numero);
+  const textarea = document.querySelector(`.editor[data-numero="${numero}"]`);
+  textarea.value = ex.codigo;
+  textarea.classList.remove('correto', 'errado');
+  const feedback = document.querySelector(`.feedback[data-numero="${numero}"]`);
+  feedback.style.display = 'none';
+}
+
+function executarCodigo(codigo) {
+  var saida = [];
+  var maxLogs = 200;
+  var logCount = 0;
+
+  var fakeConsole = {
+    log: function() {
+      if (logCount >= maxLogs) return;
+      logCount++;
+      var args = [];
+      for (var i = 0; i < arguments.length; i++) {
+        var val = arguments[i];
+        if (val === undefined) args.push("undefined");
+        else if (val === null) args.push("null");
+        else if (Array.isArray(val)) args.push(val.toString());
+        else args.push(String(val));
+      }
+      saida.push(args.join(' '));
+    }
+  };
+
+  try {
+    var fn = new Function('console', codigo);
+    fn(fakeConsole);
+    return { sucesso: true, saida: saida.join('\n') };
+  } catch (e) {
+    return { sucesso: false, saida: '', erro: e.message };
+  }
+}
+
+function validar(numero) {
+  const ex = exercicios.find(e => e.numero === numero);
+  const textarea = document.querySelector(`.editor[data-numero="${numero}"]`);
+  const feedback = document.querySelector(`.feedback[data-numero="${numero}"]`);
+  const exercicioDiv = document.querySelector(`.exercicio[data-numero="${numero}"]`);
+  const tentativasSpan = document.querySelector(`.tentativas[data-numero="${numero}"]`);
+  const btnResposta = document.querySelector(`.btn-resposta[data-numero="${numero}"]`);
+
+  if (exercicioDiv.classList.contains('resolvido')) {
+    feedback.className = 'feedback sucesso';
+    feedback.innerHTML = '&#10004; Voce ja resolveu este exercicio!';
+    feedback.style.display = 'block';
+    return;
+  }
+
+  var codigoAluno = textarea.value.trim();
+  var codigoBugado = ex.codigo.trim();
+
+  if (codigoAluno === codigoBugado) {
+    feedback.className = 'feedback erro';
+    feedback.innerHTML = '&#10060; Voce ainda nao alterou o codigo! Encontre o bug e corrija.';
+    feedback.style.display = 'block';
+    textarea.classList.remove('correto');
+    textarea.classList.add('errado');
+    return;
+  }
+
+  var resultado = executarCodigo(codigoAluno);
+
+  tentativasPorEx[numero]++;
+  tentativasSpan.textContent = 'Tentativas: ' + tentativasPorEx[numero];
+
+  if (!resultado.sucesso) {
+    feedback.className = 'feedback erro';
+    feedback.innerHTML = '&#10060; <b>Erro ao executar:</b> ' + escapeHtml(resultado.erro);
+    feedback.style.display = 'block';
+    textarea.classList.remove('correto');
+    textarea.classList.add('errado');
+  } else if (resultado.saida.trim() === ex.saidaEsperada.trim()) {
+    feedback.className = 'feedback sucesso';
+    feedback.innerHTML = '&#10004; <b>Correto!</b> Bug corrigido com sucesso!';
+    feedback.style.display = 'block';
+    textarea.classList.remove('errado');
+    textarea.classList.add('correto');
+    exercicioDiv.classList.add('resolvido');
+    exercicioDiv.querySelector('.status-icon').innerHTML = '&#9745;';
+    resolvidos++;
+    resolvidosEl.textContent = resolvidos;
+    btnResposta.style.display = 'inline-block';
+  } else {
+    feedback.className = 'feedback erro';
+    var msg = '&#10060; <b>Saida incorreta.</b>\n\n';
+    msg += '<b>Sua saida:</b>\n' + (resultado.saida === '' ? '<em>(vazio)</em>' : escapeHtml(resultado.saida)) + '\n\n';
+    msg += '<b>Esperado:</b>\n' + (ex.saidaEsperada === '' ? '<em>(vazio)</em>' : escapeHtml(ex.saidaEsperada));
+    feedback.innerHTML = msg;
+    feedback.style.whiteSpace = 'pre-wrap';
+    feedback.style.display = 'block';
+    textarea.classList.remove('correto');
+    textarea.classList.add('errado');
+  }
+
+  // Show answer button after 3 failed attempts
+  if (tentativasPorEx[numero] >= 3 && !exercicioDiv.classList.contains('resolvido')) {
+    btnResposta.style.display = 'inline-block';
+  }
+}
+</script>
+
+</body>
+</html>
